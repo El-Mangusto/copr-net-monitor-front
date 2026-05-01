@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CorpNetMonitor</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="brand-dot"></span>
+      CorpNetMonitor
+    </div>
+    <div class="nav-right">
+      <span class="last-update">Last update: <span id="last-update">—</span></span>
+      <div class="live-badge">
+        <span class="live-dot"></span> Live
+      </div>
+    </div>
+  </nav>
+
+  <div class="content">
+
+    <div id="error-banner" class="hidden"></div>
+
+    <div id="devices-bar" class="devices-bar"></div>
+
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="stat-label">Uptime</div>
+        <div class="stat-value" id="stat-uptime">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Total Network In</div>
+        <div class="stat-value" id="stat-net-in">— Mbps</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">CPU Usage</div>
+        <div class="stat-value amber" id="stat-cpu">—%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Running Processes</div>
+        <div class="stat-value blue" id="stat-processes">—</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">CPU Utilization (%)</span>
+          <span class="chart-value amber" id="cpu-current">—%</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="cpuChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">Network Throughput (Mbps)</span>
+          <span class="chart-value green" id="net-current">— Mbps</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="netChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+
+      <div class="card">
+        <div class="card-title">Storage Units</div>
+        <div id="storage-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Network Interfaces</div>
+        <table class="iface-table">
+          <thead>
+            <tr>
+              <th>Interface</th>
+              <th>Status</th>
+              <th>In (Mbps)</th>
+              <th>Out (Mbps)</th>
+            </tr>
+          </thead>
+          <tbody id="iface-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="loading-overlay" class="hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <div id="modal" class="hidden">
+    <div class="modal-box">
+      <h3>Add New Device</h3>
+      <p>Enter the IP address of the device. The backend will connect via SNMP and pull the device info automatically.</p>
+      <label class="modal-label" for="modal-ip">IP Address</label>
+      <input
+        id="modal-ip"
+        class="modal-input"
+        type="text"
+        placeholder="e.g. 192.168.1.1"
+        autocomplete="off"
+      />
+      <div id="modal-error" class="modal-error"></div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn btn-cancel">Cancel</button>
+        <button id="modal-save"   class="btn btn-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
