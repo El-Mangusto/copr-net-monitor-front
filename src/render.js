@@ -25,7 +25,6 @@ function diskLabel(name) {
   return m ? m[0].toUpperCase() : name
 }
 
-
 export function renderStats(metrics) {
   const totalInMbps = (metrics.network?.reduce((a, c) => a + (c.inSpeedKbps || 0), 0) || 0) / 1024
 
@@ -35,7 +34,6 @@ export function renderStats(metrics) {
   setText('stat-processes', metrics.processes ?? 0)
   setText('last-update', formatTime(new Date()))
 }
-
 
 export function renderStorage(storages) {
   const container = document.getElementById('storage-list')
@@ -49,12 +47,24 @@ export function renderStorage(storages) {
   container.innerHTML = storages.map(disk => {
     const pct = disk.usedPercent ?? 0
     const barColor = pct > 85 ? '#f85149' : '#22d3a0'
-    const label = disk.type === 'RAM' ? 'Physical Memory' : `Disk ${diskLabel(disk.name)}`
     const free = (disk.totalSizeGb - disk.usedSizeGb).toFixed(1)
+
+    let typeLabel, nameLabel
+    if (disk.type === 'RAM') {
+      typeLabel = 'RAM'
+      nameLabel = null
+    } else {
+      typeLabel = 'Disk'
+      nameLabel = diskLabel(disk.name)
+    }
+
     return `
       <div class="storage-item">
         <div class="storage-row">
-          <span class="storage-name">${label}</span>
+          <span class="storage-name">
+            <span class="storage-type-badge">${typeLabel}</span>
+            ${nameLabel ? `<span class="storage-disk-name">${nameLabel}</span>` : ''}
+          </span>
           <span class="storage-size">${fmt(disk.usedSizeGb, 1)} / ${fmt(disk.totalSizeGb, 1)} GB</span>
         </div>
         <div class="progress-bar">
@@ -66,13 +76,19 @@ export function renderStorage(storages) {
   }).join('')
 }
 
+const IFACE_TYPE_LABEL = {
+  ETHERNET: { label: 'Ethernet', css: 'type-eth' },
+  WIFI:     { label: 'Wi-Fi',    css: 'type-wifi' },
+  TUNNEL:   { label: 'VPN',      css: 'type-vpn' },
+  UNKNOWN:  { label: '—',        css: 'type-unknown' }
+}
 
-export function renderInterfaces(network) {
+export function renderInterfaces(network, interfaceMap = new Map()) {
   const tbody = document.getElementById('iface-tbody')
   if (!tbody) return
 
   if (!network || network.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-hint">No interface data</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-hint">No interface data</td></tr>'
     return
   }
 
@@ -83,9 +99,15 @@ export function renderInterfaces(network) {
     const statusBadge = isUp
       ? '<span class="badge badge-up">Up</span>'
       : '<span class="badge badge-down">Down</span>'
+
+    const ifaceInfo = interfaceMap.get(iface.interfaceName)
+    const typeKey = ifaceInfo?.type ?? 'UNKNOWN'
+    const { label: typeLabel, css: typeCss } = IFACE_TYPE_LABEL[typeKey] ?? IFACE_TYPE_LABEL.UNKNOWN
+
     return `
       <tr>
         <td class="iface-name">${iface.interfaceName ?? '—'}</td>
+        <td><span class="iface-type ${typeCss}">${typeLabel}</span></td>
         <td>${statusBadge}</td>
         <td class="speed-in">${inMbps}</td>
         <td class="speed-out">${outMbps}</td>
@@ -94,8 +116,7 @@ export function renderInterfaces(network) {
   }).join('')
 }
 
-
-export function renderDevices(devices, selectedId, onSelect, onAdd) {
+export function renderDevices(devices, selectedId, onSelect, onAdd, onDelete) {
   const bar = document.getElementById('devices-bar')
   if (!bar) return
 
@@ -104,10 +125,11 @@ export function renderDevices(devices, selectedId, onSelect, onAdd) {
     return `
       <div class="device-chip ${active ? 'active' : ''}" data-id="${dev.id}">
         <span class="chip-dot" style="background:${active ? '#22d3a0' : '#4e5a75'}"></span>
-        <div>
+        <div class="chip-info">
           <div class="chip-name">${dev.name || dev.ipAddress}</div>
           <div class="chip-ip">${dev.ipAddress}</div>
         </div>
+        <button class="chip-delete" data-id="${dev.id}" title="Remove device">×</button>
       </div>
     `
   }).join('')
@@ -115,12 +137,21 @@ export function renderDevices(devices, selectedId, onSelect, onAdd) {
   bar.innerHTML = chips + `<button id="btn-add-device" class="device-add">+ Add Device</button>`
 
   bar.querySelectorAll('.device-chip').forEach(el => {
-    el.addEventListener('click', () => onSelect(Number(el.dataset.id)))
+    el.addEventListener('click', e => {
+      if (e.target.closest('.chip-delete')) return
+      onSelect(Number(el.dataset.id))
+    })
+  })
+
+  bar.querySelectorAll('.chip-delete').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation()
+      onDelete(Number(btn.dataset.id))
+    })
   })
 
   document.getElementById('btn-add-device').addEventListener('click', onAdd)
 }
-
 
 export function getChartValues(metrics) {
   const totalInMbps = (metrics.network?.reduce((a, c) => a + (c.inSpeedKbps || 0), 0) || 0) / 1024
@@ -132,7 +163,6 @@ export function getChartValues(metrics) {
     netOut: totalOutMbps
   }
 }
-
 
 export function showModal() {
   document.getElementById('modal').classList.remove('hidden')
@@ -149,7 +179,6 @@ export function setModalError(msg) {
   document.getElementById('modal-error').textContent = msg
 }
 
-
 export function showLoadingOverlay(show) {
   const el = document.getElementById('loading-overlay')
   if (el) el.classList.toggle('hidden', !show)
@@ -165,7 +194,6 @@ export function setError(msg) {
     el.classList.add('hidden')
   }
 }
-
 
 function setText(id, val) {
   const el = document.getElementById(id)

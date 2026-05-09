@@ -8,6 +8,7 @@
 </head>
 <body>
 
+  <!-- ── navbar ──────────────────────────────────────────────────────────── -->
   <nav class="navbar">
     <div class="nav-brand">
       <span class="brand-dot"></span>
@@ -21,12 +22,16 @@
     </div>
   </nav>
 
+  <!-- ── main content ────────────────────────────────────────────────────── -->
   <div class="content">
 
+    <!-- error banner (hidden by default) -->
     <div id="error-banner" class="hidden"></div>
 
+    <!-- device chips bar -->
     <div id="devices-bar" class="devices-bar"></div>
 
+    <!-- stat cards -->
     <div class="stat-grid">
       <div class="stat">
         <div class="stat-label">Uptime</div>
@@ -46,6 +51,7 @@
       </div>
     </div>
 
+    <!-- charts row -->
     <div class="charts-row">
       <div class="chart-card">
         <div class="chart-header">
@@ -68,6 +74,7 @@
       </div>
     </div>
 
+    <!-- bottom row: storage + interfaces -->
     <div class="bottom-row">
 
       <div class="card">
@@ -76,11 +83,21 @@
       </div>
 
       <div class="card">
-        <div class="card-title">Network Interfaces</div>
+        <div class="card-header">
+          <div class="card-title">Network Interfaces</div>
+          <button id="btn-iface-refresh" class="btn-refresh" title="Re-scan interfaces">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1.5 8A6.5 6.5 0 1 0 4 3.5"/>
+              <polyline points="1.5,1 1.5,4 4.5,4"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
         <table class="iface-table">
           <thead>
             <tr>
               <th>Interface</th>
+              <th>Type</th>
               <th>Status</th>
               <th>In (Mbps)</th>
               <th>Out (Mbps)</th>
@@ -93,10 +110,12 @@
     </div>
   </div>
 
+  <!-- ── loading overlay ─────────────────────────────────────────────────── -->
   <div id="loading-overlay" class="hidden">
     <div class="spinner"></div>
   </div>
 
+  <!-- ── add device modal ────────────────────────────────────────────────── -->
   <div id="modal" class="hidden">
     <div class="modal-box">
       <h3>Add New Device</h3>

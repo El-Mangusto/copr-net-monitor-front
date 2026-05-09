@@ -15,7 +15,8 @@ const state = {
   selectedId: null,
   cpuChart: null,
   netChart: null,
-  pollTimer: null
+  pollTimer: null,
+  interfaceMap: new Map() 
 }
 
 async function init() {
@@ -36,19 +37,88 @@ async function loadDevices() {
 }
 
 function refreshDeviceBar() {
-  renderDevices(state.devices, state.selectedId, selectDevice, showModal)
+  renderDevices(state.devices, state.selectedId, selectDevice, showModal, confirmDeleteDevice)
 }
 
 async function selectDevice(id) {
   state.selectedId = id
+  state.interfaceMap = new Map()
   refreshDeviceBar()
   stopPolling()
   destroyCharts()
   initCharts()
   showLoadingOverlay(true)
+  await loadInterfaces()
   await refreshData()
   showLoadingOverlay(false)
   startPolling()
+}
+
+async function confirmDeleteDevice(id) {
+  const dev = state.devices.find(d => d.id === id)
+  const label = dev ? (dev.name || dev.ipAddress) : `#${id}`
+  if (!confirm(`Remove device "${label}"?`)) return
+
+  try {
+    await api.deleteDevice(id)
+    state.devices = state.devices.filter(d => d.id !== id)
+
+    if (state.selectedId === id) {
+      stopPolling()
+      destroyCharts()
+      state.selectedId = null
+      state.interfaceMap = new Map()
+
+      if (state.devices.length > 0) {
+        await selectDevice(state.devices[0].id)
+      } else {
+        refreshDeviceBar()
+        clearDashboard()
+      }
+    } else {
+      refreshDeviceBar()
+    }
+  } catch (e) {
+    setError('Failed to delete device: ' + e.message)
+  }
+}
+
+function clearDashboard() {
+  document.getElementById('stat-uptime').textContent = '—'
+  document.getElementById('stat-net-in').textContent = '— Mbps'
+  document.getElementById('stat-cpu').textContent = '—%'
+  document.getElementById('stat-processes').textContent = '—'
+  document.getElementById('storage-list').innerHTML = ''
+  document.getElementById('iface-tbody').innerHTML = ''
+}
+
+async function loadInterfaces() {
+  if (!state.selectedId) return
+  try {
+    const list = await api.getInterfaces(state.selectedId)
+    state.interfaceMap = new Map(list.map(i => [i.name, { type: i.type }]))
+  } catch {
+    state.interfaceMap = new Map()
+  }
+}
+
+async function syncInterfaces() {
+  if (!state.selectedId) return
+  const btn = document.getElementById('btn-iface-refresh')
+  if (btn) { btn.disabled = true; btn.classList.add('spinning') }
+
+  try {
+    const dev = state.devices.find(d => d.id === state.selectedId)
+    if (dev) {
+      await api.syncDevice(state.selectedId, dev.ipAddress)
+    }
+    await loadInterfaces()
+    await refreshData()
+  } catch (e) {
+    setError('Interface sync failed: ' + e.message)
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('spinning') }
+  }
 }
 
 async function refreshData() {
@@ -58,13 +128,12 @@ async function refreshData() {
     setError(null)
     renderStats(metrics)
     renderStorage(metrics.storages)
-    renderInterfaces(metrics.network)
+    renderInterfaces(metrics.network, state.interfaceMap)
 
     const { label, cpu, netIn, netOut } = getChartValues(metrics)
     pushToChart(state.cpuChart, label, [cpu])
     pushToChart(state.netChart, label, [netIn, netOut])
 
-    // sync cpu chart header value
     const cpuVal = document.getElementById('cpu-current')
     if (cpuVal) cpuVal.textContent = (metrics.cpuLoadAvg ?? 0).toFixed(1) + '%'
 
@@ -79,7 +148,7 @@ async function refreshData() {
 }
 
 function startPolling() {
-  state.pollTimer = setInterval(refreshData, 5000)
+  state.pollTimer = setInterval(refreshData, 15000)
 }
 
 function stopPolling() {
@@ -108,16 +177,23 @@ function bindModal() {
     if (e.key === 'Enter') submitNewDevice()
     if (e.key === 'Escape') hideModal()
   })
-  // close on backdrop click
   document.getElementById('modal').addEventListener('click', e => {
     if (e.target.id === 'modal') hideModal()
   })
+
+  document.getElementById('btn-iface-refresh').addEventListener('click', syncInterfaces)
 }
 
 async function submitNewDevice() {
   const ip = document.getElementById('modal-ip').value.trim()
   if (!ip) {
     setModalError('IP address is required')
+    return
+  }
+
+  const duplicate = state.devices.find(d => d.ipAddress === ip)
+  if (duplicate) {
+    setModalError(`Device with IP ${ip} already exists`)
     return
   }
 

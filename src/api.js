@@ -14,7 +14,6 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  // Devices
   getDevices: () => request('/devices'),
   addDevice: (ipAddress) => request('/devices', {
     method: 'POST',
@@ -28,5 +27,10 @@ export const api = {
 
   getLatestMetrics: (deviceId) => request(`/devices/${deviceId}/metrics/latest`),
 
-  getInterfaces: (deviceId) => request(`/devices/${deviceId}/interfaces`)
+  getInterfaces: (deviceId) => request(`/devices/${deviceId}/interfaces`),
+
+  syncDevice: (id, ipAddress) => request(`/devices/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ ipAddress })
+  })
 }
