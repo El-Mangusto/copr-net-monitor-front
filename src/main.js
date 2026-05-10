@@ -5,7 +5,7 @@ import {
 } from './charts.js'
 import {
   renderStats, renderStorage, renderInterfaces,
-  renderDevices, getChartValues,
+  renderDevices, getChartValues, renderSensors,
   showModal, hideModal, setModalError,
   showLoadingOverlay, setError
 } from './render.js'
@@ -16,12 +16,15 @@ const state = {
   cpuChart: null,
   netChart: null,
   pollTimer: null,
-  interfaceMap: new Map() 
+  sensorTimer: null,
+  interfaceMap: new Map()
 }
 
 async function init() {
   bindModal()
   await loadDevices()
+  await refreshSensors()
+  startSensorPolling()
 }
 
 async function loadDevices() {
@@ -147,6 +150,15 @@ async function refreshData() {
   }
 }
 
+async function refreshSensors() {
+  try {
+    const sensors = await api.getSensors()
+    renderSensors(sensors && sensors.length > 0 ? sensors[0] : null)
+  } catch {
+    renderSensors(null)
+  }
+}
+
 function startPolling() {
   state.pollTimer = setInterval(refreshData, 15000)
 }
@@ -155,6 +167,17 @@ function stopPolling() {
   if (state.pollTimer) {
     clearInterval(state.pollTimer)
     state.pollTimer = null
+  }
+}
+
+function startSensorPolling() {
+  state.sensorTimer = setInterval(refreshSensors, 15000)
+}
+
+function stopSensorPolling() {
+  if (state.sensorTimer) {
+    clearInterval(state.sensorTimer)
+    state.sensorTimer = null
   }
 }
 

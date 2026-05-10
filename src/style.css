@@ -34,6 +34,7 @@ html, body {
   position: sticky;
   top: 0;
   z-index: 100;
+  gap: 16px;
 }
 
 .nav-brand {
@@ -43,6 +44,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .brand-dot {
@@ -58,6 +60,7 @@ html, body {
   align-items: center;
   gap: 15px;
   font-size: 12px;
+  flex-shrink: 0;
 }
 
 .last-update { color: var(--text3); }
@@ -516,3 +519,49 @@ html, body {
 .type-wifi    { background: rgba(34,211,160,.12);  color: var(--green); }
 .type-vpn     { background: rgba(245,166,35,.12);  color: var(--amber); }
 .type-unknown { background: var(--bg4);            color: var(--text3); }
+
+/* ── sensor chips in navbar ─────────────────────────────────────────────── */
+#sensor-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.sensor-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  border: 1px solid;
+  cursor: default;
+}
+
+.sensor-chip .s-label { color: var(--text2); font-size: 11px; }
+.sensor-chip .s-val   { font-weight: 600; font-size: 13px; }
+.sensor-chip .s-dot   { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+.chip-ok      { background: rgba(34,211,160,.08);  border-color: rgba(34,211,160,.3); }
+.chip-ok .s-val  { color: var(--green); }
+.chip-ok .s-dot  { background: var(--green); }
+
+.chip-warn    { background: rgba(245,166,35,.08);  border-color: rgba(245,166,35,.3); }
+.chip-warn .s-val { color: var(--amber); }
+.chip-warn .s-dot { background: var(--amber); animation: pulse 1.5s infinite; }
+
+.chip-crit    { background: rgba(248,81,73,.12);   border-color: rgba(248,81,73,.4); }
+.chip-crit .s-val { color: var(--red); }
+.chip-crit .s-dot { background: var(--red); animation: pulse .8s infinite; }
+
+.chip-offline { background: rgba(78,90,117,.1);    border-color: var(--border); }
+.chip-offline .s-val { color: var(--text3); }
+.chip-offline .s-dot { background: var(--text3); }
+
+.sensor-sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+
+.smoke-label-detected { color: var(--red) !important; font-weight: 700; letter-spacing: .5px; }
+.smoke-label-ok       { color: var(--green) !important; }

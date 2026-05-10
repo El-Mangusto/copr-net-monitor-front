@@ -1,4 +1,3 @@
-
 export function formatUptime(seconds) {
   if (!seconds || seconds < 0) return '—'
   const d = Math.floor(seconds / 86400)
@@ -163,6 +162,84 @@ export function getChartValues(metrics) {
     netOut: totalOutMbps
   }
 }
+
+// ── Sensor rendering ────────────────────────────────────────────────────────
+
+const SENSOR_THRESHOLDS = {
+  temp:     { warn: 28, crit: 35 },
+  humidity: { warnLow: 30, okLow: 40, okHigh: 65, warnHigh: 80 },
+  smoke:    { warn: 30, crit: 60 }
+}
+
+function sensorClass(value, type) {
+  const t = SENSOR_THRESHOLDS
+  if (type === 'temp') {
+    if (value > t.temp.crit) return 'chip-crit'
+    if (value > t.temp.warn) return 'chip-warn'
+    return 'chip-ok'
+  }
+  if (type === 'humidity') {
+    if (value > t.humidity.warnHigh || value < t.humidity.warnLow) return 'chip-crit'
+    if (value > t.humidity.okHigh   || value < t.humidity.okLow)   return 'chip-warn'
+    return 'chip-ok'
+  }
+  if (type === 'smoke') {
+    if (value > t.smoke.crit) return 'chip-crit'
+    if (value > t.smoke.warn) return 'chip-warn'
+    return 'chip-ok'
+  }
+  return 'chip-ok'
+}
+
+export function renderSensors(sensor) {
+  const bar = document.getElementById('sensor-bar')
+  if (!bar) return
+
+  if (!sensor) {
+    bar.innerHTML = `
+      <div class="sensor-chip chip-offline">
+        <span class="s-icon">○</span>
+        <span class="s-label">Environmental sensor</span>
+        <span class="s-val">Offline</span>
+        <span class="s-dot"></span>
+      </div>`
+    return
+  }
+
+  const tempClass  = sensorClass(sensor.temperatureC,    'temp')
+  const humClass   = sensorClass(sensor.humidityPercent, 'humidity')
+  const smokeClass = sensor.smokeDetected
+    ? 'chip-crit'
+    : sensorClass(sensor.smokePercent, 'smoke')
+
+  bar.innerHTML = `
+    <div class="sensor-chip ${tempClass}">
+      <span class="s-label">Temp</span>
+      <span class="s-val">${sensor.temperatureC.toFixed(1)}°C</span>
+      <span class="s-dot"></span>
+    </div>
+
+    <div class="sensor-sep"></div>
+
+    <div class="sensor-chip ${humClass}">
+      <span class="s-label">Humidity</span>
+      <span class="s-val">${sensor.humidityPercent.toFixed(0)}%</span>
+      <span class="s-dot"></span>
+    </div>
+
+    <div class="sensor-sep"></div>
+
+    <div class="sensor-chip ${smokeClass}">
+      <span class="s-label">Smoke</span>
+      <span class="s-val ${sensor.smokeDetected ? 'smoke-label-detected' : 'smoke-label-ok'}">
+        ${sensor.smokeDetected ? '⚠ DETECTED' : sensor.smokePercent.toFixed(1) + '%'}
+      </span>
+      <span class="s-dot"></span>
+    </div>
+  `
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
 
 export function showModal() {
   document.getElementById('modal').classList.remove('hidden')

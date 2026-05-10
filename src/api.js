@@ -32,5 +32,7 @@ export const api = {
   syncDevice: (id, ipAddress) => request(`/devices/${id}`, {
     method: 'PUT',
     body: JSON.stringify({ ipAddress })
-  })
+  }),
+
+  getSensors: () => request('/sensors'),
 }
